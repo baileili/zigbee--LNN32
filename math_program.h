@@ -127,3 +127,6 @@ int translation(int *data, int data_length)
   //for(int i=0;i<(data_length);i++)*data--;
   return (data_length-flag);
 }
+
+
+
