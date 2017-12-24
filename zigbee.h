@@ -9,7 +9,10 @@
 #define uint unsigned int
 #define ulong unsigned long
 
-int data_cout=0,data[100];
+bool rev_flag=NULL;
+int data_cout=0;
+int data[100];
+unsigned long time_millis;
 
 /******************************************************************************************
 函数名称：zigbee_port(int port)
@@ -454,18 +457,54 @@ int zigbee_restart(int sent_port)
   Serial.print("FF");
 }
 
+/******************************************************************************************
+函数名称：zigbee_rev()
+函数作用：接收串口数据，并按照zigbee格式内容进行处理
+输入参数：无
+输出参数：返回接收数据长度
+测试例程：zigbee_rev()
+返回参数：串口输入(0102030405060708090A0B0C0D0E0F)
+          未取消注释(   data[0]=1 \n data[1]=2 \n data[2]=3 \n data[3]=4 \n
+                        data[4]=5 \n data[5]=6 \n data[6]=7 \n data[7]=8 \n
+                        data[8]=9 \n data[9]=10\n data[10]=11 \n data[11]=12 \n 
+                        data[12]=13 \n data[13]=14 \n data[14]=15)
+ /*****************************************************************************************/
 int zigbee_rev()
 {
+  //串口输入开始接收信息
   while(Serial.available()>0)
   {
+   //数组开始接收串口输入信息
    data[data_cout]=Serial.read();
+   //串口数据标志符置高
+   rev_flag=true;
+   //装载时间校准数据，防止误操作
+   time_millis=millis();
+    //偶数位数据为一直字符数据，开始处理
     if(data_cout%2!=0)
       {
-        //data_rate(data[(data_cout-1)],data[data_cout]);
-        data[data_cout/2]=data_rate(data[(data_cout-1)],data[data_cout]);
-        Serial.print("   data[");Serial.print(data_cout/2);Serial.print("]=");Serial.println(data[data_cout/2]);
+        //装载时间校准数据，开始记录处理时间
+        time_millis=millis();
+        //处理数据，并转成int数型储存在数组中
+        data[(data_cout/2)]=data_rate(data[(data_cout-1)],data[data_cout]); 
       }
+    //数据记录操作
     data_cout++;
   }
+  //如果距离上次串口处理时间超过20ms，则认为串口接收完毕
+  if((time_millis+20)<=millis()&&rev_flag==true)
+  {
+    //串口接收标识符置低
+    rev_flag=NULL;
+    for(int i=0;i<data_cout;i=i+2)
+    {Serial.print("   data[");Serial.print(i/2);Serial.print("]=");Serial.println(data[i/2]);}
+    //返回数据长度
+    Serial.println(data_cout/2);
+    return data_cout/2;
+  }
 }
+
+
+
+
 

@@ -1,8 +1,11 @@
-/******************************************************************************************
+  /******************************************************************************************
                                   数据数学关系处理函数
  /*****************************************************************************************/
  
 #include "Arduino.h"
+
+#define erro 0
+#define end 1
 
 /******************************************************************************************
 函数名称：array_memset(int *array_name,int array_set,int array_length)
@@ -27,7 +30,7 @@
     *array_name=array_set;
     *array_name++; 
   }
-}
+} 
 
 /******************************************************************************************
 函数名称：ascall_change(int  data)
@@ -75,7 +78,7 @@ int ascall_change(int  data)
               else 
                 {data[data_char02]=Serial.read();data_rate(data_char01,data_char02);}
               data_cout++;
-            }
+            }                          
 返回参数：输入10返回(  HEX=1 0    DEC=17)
           输入fe返回(  HEX=f e    DEC=254)
           输入FF返回(  HEX=F F    DEC=255)
@@ -87,5 +90,44 @@ int data_rate(char data_char01,char data_char02)
   //Serial.print("   DEC=");Serial.println(data);
   return data;  
 }
+
+/******************************************************************************************
+函数名称：int translation(int *data, int data_length)
+函数作用：返转义，同时返回有效数据数组长度(包括数据头与数据尾)
+输入参数： 
+输出参数：有效数据长度(int数型)
+测试例程：int a[14]={253,1,254,253,4,254,252,254,253,9,10,11,12,255};
+          Serial.println(translation(a, sizeof(a)/sizeof(int)));
+          while(1);
+返回参数：11
+/*****************************************************************************************/
+int translation(int *data, int data_length)
+{
+  int flag=0;int data_stored;
+  for(int i=0;i<data_length;i++,*data++)
+  {
+    if(i==0&&*data!=253)return erro;
+    else if(i==(data_length-1)&&*data!=255)return erro;
+    else if(*data==254)
+      {*data++;if(*data==252||*data==253){data_stored=*data;*data=0;*data--;*data=(data_stored+2);}}
+  }
+  for(int i=0;i<data_length;i++)*data--;
+  //Serial.println("---------------------------------------------");
+  for(int i=0;i<data_length;i++,*data++)
+  {
+    if(*data==0){*data--;if(*data==255||*data==254){flag++;}*data++;}
+    line_a:for(int j=0;j<flag;j++)*data++;
+    if(*data==0){*data--;if(*data==255||*data==254){flag++;goto line_a;}}data_stored=*data;
+    for(int j=0;j<flag;j++)*data--;
+    *data=data_stored;
+  }
+  for(int i=0;i<data_length;i++)*data--;
+  //for(int i=0;i<(data_length-flag);i++,*data++)
+    //{Serial.print("data");Serial.print(i);Serial.print("=");Serial.println(*data);}
+  //for(int i=0;i<(data_length);i++)*data--;
+  return (data_length-flag);
+}
+
+
 
 
