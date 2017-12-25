@@ -99,34 +99,68 @@ int data_rate(char data_char01,char data_char02)
 测试例程：int a[14]={253,1,254,253,4,254,252,254,253,9,10,11,12,255};
           Serial.println(translation(a, sizeof(a)/sizeof(int)));
           while(1);
-返回参数：11
+返回参数：11(原转义数据：253,1,254,253,4,254,252,254,253,9,10,11,12,255)
+            (反转义数据：253,1,255，  ,4,254,   ,255,   ,9,10,11,12,255)
 /*****************************************************************************************/
 int translation(int *data, int data_length)
 {
-  int flag=0;int data_stored;
+  //声明局部变量flag(记录转义次数)
+  int flag=0;
+  //声明局部变量data_stored(数据暂存)
+  int data_stored;
+  //将转义数据反转义，并将多余数据标记为0
   for(int i=0;i<data_length;i++,*data++)
   {
-    if(i==0&&*data!=253)return erro;
-    else if(i==(data_length-1)&&*data!=255)return erro;
+    //检测数据头标记符是否存在，判断接收数据是否正确
+    if(i==0&&*data!=253)
+      return erro;
+    //检测数据尾标记符是否存在，判断接收数据是否正确
+    else if(i==(data_length-1)&&*data!=255)
+      return erro;
+    //将转义内容反转义(FEFD>>FF ; FEFC>>FE)
     else if(*data==254)
-      {*data++;if(*data==252||*data==253){data_stored=*data;*data=0;*data--;*data=(data_stored+2);}}
+      {
+        //检测下一个数据内容，判断是否为转义内容
+        *data++;
+        if(*data==252||*data==253)
+          //反转义(FEFD>>FF00; FEFC>>FE00)
+          {data_stored=*data;*data=0;*data--;*data=(data_stored+2);}
+      }
   }
+  //将指针地址返回数组的首元素地址
   for(int i=0;i<data_length;i++)*data--;
   //Serial.println("---------------------------------------------");
+  //删除转义多余数据(即0)
   for(int i=0;i<data_length;i++,*data++)
   {
-    if(*data==0){*data--;if(*data==255||*data==254){flag++;}*data++;}
+    //检测是否为需删除数据
+    if(*data==0)
+      {*data--;if(*data==255||*data==254){flag++;}*data++;}
+    //若数据为删除的数据，进行标记(flag),嗅探位移数据操作次数
     line_a:for(int j=0;j<flag;j++)*data++;
-    if(*data==0){*data--;if(*data==255||*data==254){flag++;goto line_a;}}data_stored=*data;
+    //判断位移数据是否也为删除数据,并进行处理
+    if(*data==0)
+      {
+        *data--;
+        if(*data==255||*data==254)
+          {flag++;goto line_a;}
+      }
+    //将位移数据储存在局部变量(data_stored)中
+    data_stored=*data;
+    //位移至需要位移的数据位置
     for(int j=0;j<flag;j++)*data--;
+    //替换数据，实现数组位移
     *data=data_stored;
   }
+  //指针位置复位至数组首数据位置
   for(int i=0;i<data_length;i++)*data--;
   //for(int i=0;i<(data_length-flag);i++,*data++)
     //{Serial.print("data");Serial.print(i);Serial.print("=");Serial.println(*data);}
   //for(int i=0;i<(data_length);i++)*data--;
+  //返回真实数组数据长度
   return (data_length-flag);
 }
+
 
 
 

@@ -497,7 +497,10 @@ int zigbee_rev()
     //串口接收标识符置低
     rev_flag=NULL;
     for(int i=0;i<data_cout;i=i+2)
-    {Serial.print("   data[");Serial.print(i/2);Serial.print("]=");Serial.println(data[i/2]);}
+    {
+      Serial.print("   data[");Serial.print(i/2);Serial.print("]=");
+      Serial.println(data[i/2]);
+    }
     //返回数据长度
     Serial.println(data_cout/2);
     return data_cout/2;
