@@ -487,6 +487,106 @@ int zigbee_restart(int sent_port)
 }
 
 /******************************************************************************************
+函数名称：zigbee_answer(int *data)
+函数作用：处理zigbee返回的特殊指令
+          (响应包、地址包、网络地址包、波特率包)
+输入参数：无
+输出参数：返回接收数据长度
+测试例程：int a[8]={254,5,33,144,0,0,0,254};
+          zigbee_answer(a);
+          while(1);
+返回参数：无(串口显示 Operation completion )
+ /*****************************************************************************************/
+uint zigbee_answer(int *data)
+{
+  if(*data==254)  
+  {
+    for(int i=0;i<2;i++)*data++;
+    //确定是否为0X21端口数据
+    if(*data==33)
+    {
+      for(int i=0;i<4;i++)*data++;
+      switch(*data)
+        {
+          //设置参数成功(0X00)，发送信息形如(FE052190000000FE)
+          case 0:{
+                    for(int i=0;i<6;i++)*data--;
+                    Serial.println("Operation completion");
+                    break;
+                  }
+          //端口不可用(0XF0),发送信息形如(FE052190000F0FE)
+          case 240:{
+                    for(int i=0;i<6;i++)*data--;
+                    Serial.println("Port unavailability");
+                    break;
+                  }
+          //命令错误(0XF8),发送信息形如(FE052190000F0FE)
+          case 248:{
+                    for(int i=0;i<6;i++)*data--;
+                    Serial.println("Command fault");
+                    break;
+                  }
+          //包长度与命令要求不相符(0XF9),发送信息形如(FE052190000F8FE)
+          case 249:{
+                    for(int i=0;i<6;i++)*data--;
+                    Serial.println("Length error");
+                    break;
+                  }
+          //包值不可用,发送信息形如(FE052190000FAFE)
+          case 250:{
+                    for(int i=0;i<6;i++)*data--;
+                    Serial.println("Numeric unavailability");
+                    break;
+                  }
+          //读取地址ID，返回地址(收到的信息形如 FE0721900000210F00FF )
+          case 33:{
+                    *data++;uint ID_stored=*data;
+                    *data++;ID_stored=((*data*256)+ID_stored);
+                    for(int i=0;i<8;i++)*data--;
+                    //串口显示地址
+                    Serial.print("read ID=");Serial.println(ID_stored);
+                    //返回地址
+                    return ID_stored;
+                  }
+          //读取网络地址(netID)，返回网络地址(收到的信息形如 FE0721900000228819F )
+          case 34:{
+                    *data++;uint netID_stored=*data;
+                    *data++;netID_stored=((*data*256)+netID_stored);
+                    for(int i=0;i<8;i++)*data--;
+                    //串口显示网络地址
+                    Serial.print("read netID=");Serial.println(netID_stored);
+                    //返回网络地址
+                    return netID_stored;
+                  }
+          //读取信道，返回信道(收到的信息形如 FE0721900000228819F )
+          case 35:{
+                    *data++;int rout_stored=*data;
+                    for(int i=0;i<7;i++)*data--;
+                    //串口显示信道
+                    Serial.print("read rout=");Serial.println(rout_stored);
+                    //返回信道
+                    return rout_stored;
+                  }
+          //读取波特率，返回波特率(收到的信息形如 FE0721900000228819F )
+          case 36:{
+                    *data++;int baudrate_stored=*data;
+                    for(int i=0;i<8;i++)*data--;
+                    //串口显示波特率
+                    zigbee_rebaudrate(baudrate_stored);
+                    //返回波特率对应代码
+                    return baudrate_stored;
+                  }
+        }
+    }
+    else if(*data==35)
+    {
+      Serial.print("RSSI test");  
+      for(int i=0;i<3;i++)*data--;
+    }
+  }
+}
+
+/******************************************************************************************
 函数名称：zigbee_rev()
 函数作用：接收串口数据，并按照zigbee格式内容进行处理
 输入参数：无
@@ -497,7 +597,7 @@ int zigbee_restart(int sent_port)
                         data[4]=5 \n data[5]=6 \n data[6]=7 \n data[7]=8 \n
                         data[8]=9 \n data[9]=10\n data[10]=11 \n data[11]=12 \n 
                         data[12]=13 \n data[13]=14 \n data[14]=15)
- /*****************************************************************************************/
+ *****************************************************************************************/
 int zigbee_rev()
 {
   //串口输入开始接收信息
@@ -525,7 +625,8 @@ int zigbee_rev()
   {
     //串口接收标识符置低
     rev_flag=NULL;
-    translation(data,(data_cout/2));  
+    translation(data,(data_cout/2)); 
+    zigbee_answer(data); 
     //串口输出数据
     for(int i=0;i<data_cout;i=i+2)
     {Serial.print("   data[");Serial.print(i/2);Serial.print("]=");Serial.println(data[i/2]);}    
@@ -537,65 +638,26 @@ int zigbee_rev()
 }
 
 /******************************************************************************************
-函数名称：zigbee_answer(int *data)
-函数作用：接收串口数据，并按照zigbee格式内容进行处理
-输入参数：无
-输出参数：返回接收数据长度
-测试例程：zigbee_rev()
-返回参数：串口输入(0102030405060708090A0B0C0D0E0F)
-          未取消注释(   data[0]=1 \n data[1]=2 \n data[2]=3 \n data[3]=4 \n
-                        data[4]=5 \n data[5]=6 \n data[6]=7 \n data[7]=8 \n
-                        data[8]=9 \n data[9]=10\n data[10]=11 \n data[11]=12 \n 
-                        data[12]=13 \n data[13]=14 \n data[14]=15)
+函数名称：zigbee_rssi(int sent_port,unit ID_1,unit ID_2)
+函数作用：测试连接质量
+输入参数：sent_port  ——————————源端口号
+          ID_1       ——————————测试对象1模块地址
+          ID_1       ——————————测试对象2模块地址
+输出参数：需调用zigbee_rev()函数处理返回的连接质量参数
+测试例程：未测试
+返回参数：
  /*****************************************************************************************/
-uint zigbee_answer(int *data)
+int zigbee_rssi(int sent_port,unit ID_1,unit ID_2)
 {
-  //确定是否为21端口数据
-  for(int i=0;i<2;i++)*data++;
-  if(*data==33)
-    for(int i=0;i<4;i++)*data++;
-    switch(*data)
-      {
-        //读取地址ID，返回地址(收到的信息形如 FE0721900000210F00FF )
-        case 33:{
-                  *data++;uint ID_stored=*data;
-                  *data++;ID_stored=((*data*256)+ID_stored);
-                  for(int i=0;i<8;i++)*data--;
-                  //串口显示地址
-                  Serial.print("read ID=");Serial.println(ID_stored);
-                  //返回地址
-                  return ID_stored;
-                }
-        //读取网络地址(netID)，返回网络地址(收到的信息形如 FE0721900000228819F )
-        case 34:{
-                  *data++;uint netID_stored=*data;
-                  *data++;netID_stored=((*data*256)+netID_stored);
-                  for(int i=0;i<8;i++)*data--;
-                  //串口显示网络地址
-                  Serial.print("read netID=");Serial.println(netID_stored);
-                  //返回网络地址
-                  return netID_stored;
-                }
-        //读取信道，返回信道(收到的信息形如 FE0721900000228819F )
-        case 35:{
-                  *data++;int rout_stored=*data;
-                  for(int i=0;i<7;i++)*data--;
-                  //串口显示信道
-                  Serial.print("read rout=");Serial.println(rout_stored);
-                  //返回信道
-                  return rout_stored;
-                }
-        //读取波特率，返回波特率(收到的信息形如 FE0721900000228819F )
-        case 36:{
-                  *data++;int baudrate_stored=*data;
-                  for(int i=0;i<8;i++)*data--;
-                  //串口显示波特率
-                  zigbee_rebaudrate(baudrate_stored);
-                  //返回波特率对应代码
-                  return baudrate_stored;
-                }
-      }
+  //串口输出采集数据包
+  Serial.print("FE06");
+  Serial.print(zigbee_port(sent_port));
+  Serial.print("23");
+  Serial.print(zigbee_ID(ID_1));  Serial.print(zigbee_ID(ID_2));
+  Serial.print("FF");
 }
+
+
 
 
 
