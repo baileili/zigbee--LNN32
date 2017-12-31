@@ -7,6 +7,8 @@
 #define erro 0
 #define end 1
 
+
+
 /******************************************************************************************
 函数名称：array_memset(int *array_name,int array_set,int array_length)
 函数作用：将int数形数组全部清零
@@ -99,15 +101,17 @@ int data_rate(char data_char01,char data_char02)
 测试例程：int a[14]={253,1,254,253,4,254,252,254,253,9,10,11,12,255};
           Serial.println(translation(a, sizeof(a)/sizeof(int)));
           while(1);
-返回参数：11(原转义数据：253,1,254,253,4,254,252,254,253,9,10,11,12,255)
-            (反转义数据：253,1,255，  ,4,254,   ,255,   ,9,10,11,12,255)
+返回参数：11(原转义数据：253, 1,254,253, 4,254,252,254,253,9 ,10 ,11,12,255)
+            (反转义数据：253, 1,255，  , 4,254,   ,255,   ,9 ,10 ,11,12,255)
+            (HEX内容   ：FD ,01,FF ,   ,04,FE ,   ,FF ,   , 09,0A,0B,0C,FF)
+            FD01FF04FEFF090A0B0CFF
 /*****************************************************************************************/
 int translation(int *data, int data_length)
 {
   //声明局部变量flag(记录转义次数)
   int flag=0;
   //声明局部变量data_stored(数据暂存)
-  int data_stored;
+  int data_stored;  
   //将转义数据反转义，并将多余数据标记为0
   for(int i=0;i<data_length;i++,*data++)
   {
@@ -115,7 +119,7 @@ int translation(int *data, int data_length)
     if(i==0&&*data!=253)
       return erro;
     //检测数据尾标记符是否存在，判断接收数据是否正确
-    else if(i==(data_length-1)&&*data!=255)
+    else if(i==(data_length-1)&&*data!=255) 
       return erro;
     //将转义内容反转义(FEFD>>FF ; FEFC>>FE)
     else if(*data==254)
@@ -125,6 +129,7 @@ int translation(int *data, int data_length)
         if(*data==252||*data==253)
           //反转义(FEFD>>FF00; FEFC>>FE00)
           {data_stored=*data;*data=0;*data--;*data=(data_stored+2);}
+        else *data--;
       }
   }
   //将指针地址返回数组的首元素地址
@@ -153,13 +158,12 @@ int translation(int *data, int data_length)
     *data=data_stored;
   }
   //指针位置复位至数组首数据位置
-  for(int i=0;i<data_length;i++)*data--;
-  //for(int i=0;i<(data_length-flag);i++,*data++)
-    //{Serial.print("data");Serial.print(i);Serial.print("=");Serial.println(*data);}
-  //for(int i=0;i<(data_length);i++)*data--;
+  for(int i=0;i<data_length;i++)*data--;  
   //返回真实数组数据长度
   return (data_length-flag);
 }
+
+
 
 
 

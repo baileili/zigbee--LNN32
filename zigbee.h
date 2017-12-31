@@ -9,6 +9,8 @@
 #define uint unsigned int
 #define ulong unsigned long
 
+
+
 bool rev_flag=NULL;
 int data_cout=0;
 int data[100];
@@ -24,7 +26,8 @@ unsigned long time_millis;
  /*****************************************************************************************/
 int zigbee_port(int port)
 {
-  if(port==255)Serial.print("FEFD");
+  if(port==255)
+    Serial.print("FEFD");
   else if(port==254)Serial.print("FEFC");
   else if(port<=15){Serial.print("0");Serial.print(port,HEX);}
   else  Serial.print(port,HEX);  
@@ -139,6 +142,32 @@ int zigbee_baudrate(ulong baudrate)
   else if(baudrate==250000)Serial.print("0B");
   else if(baudrate==500000)Serial.print("0C");
   else Serial.print("02");
+}
+
+/******************************************************************************************
+函数名称：zigbee_rebaudrate(ulong baudrate)
+函数作用：接收到DL-LN的比特率信息，用于调试
+输入参数：baudrate  ——————————波特率
+输出参数：无
+测试例程：zigbee_rebaudrate(2);while(1);
+返回参数：9600
+ /*****************************************************************************************/
+int zigbee_rebaudrate(ulong baudrate)
+{
+  if(baudrate==0)Serial.print("2400");
+  else if(baudrate==1)Serial.print("4800");
+  else if(baudrate==2)Serial.print("9600");
+  else if(baudrate==3)Serial.print("14400");
+  else if(baudrate==4)Serial.print("19200");
+  else if(baudrate==5)Serial.print("28800");
+  else if(baudrate==6)Serial.print("38400");
+  else if(baudrate==7)Serial.print("57600");
+  else if(baudrate==8)Serial.print("115200");
+  else if(baudrate==9)Serial.print("230400");
+  else if(baudrate==10)Serial.print("125000");
+  else if(baudrate==11)Serial.print("250000");
+  else if(baudrate==12)Serial.print("500000");
+  else Serial.print("9600");
 }
 
 /******************************************************************************************
@@ -462,7 +491,7 @@ int zigbee_restart(int sent_port)
 函数作用：接收串口数据，并按照zigbee格式内容进行处理
 输入参数：无
 输出参数：返回接收数据长度
-测试例程：zigbee_rev()
+测试例程：zigbee_rev();
 返回参数：串口输入(0102030405060708090A0B0C0D0E0F)
           未取消注释(   data[0]=1 \n data[1]=2 \n data[2]=3 \n data[3]=4 \n
                         data[4]=5 \n data[5]=6 \n data[6]=7 \n data[7]=8 \n
@@ -496,16 +525,79 @@ int zigbee_rev()
   {
     //串口接收标识符置低
     rev_flag=NULL;
+    translation(data,(data_cout/2));  
+    //串口输出数据
     for(int i=0;i<data_cout;i=i+2)
-    {
-      Serial.print("   data[");Serial.print(i/2);Serial.print("]=");
-      Serial.println(data[i/2]);
-    }
+    {Serial.print("   data[");Serial.print(i/2);Serial.print("]=");Serial.println(data[i/2]);}    
     //返回数据长度
-    Serial.println(data_cout/2);
-    return data_cout/2;
+    Serial.print("data length=");Serial.println(data_cout/2);
+    int data_cout_stored=data_cout/2;data_cout=0;
+    return data_cout_stored;
   }
 }
+
+/******************************************************************************************
+函数名称：zigbee_answer(int *data)
+函数作用：接收串口数据，并按照zigbee格式内容进行处理
+输入参数：无
+输出参数：返回接收数据长度
+测试例程：zigbee_rev()
+返回参数：串口输入(0102030405060708090A0B0C0D0E0F)
+          未取消注释(   data[0]=1 \n data[1]=2 \n data[2]=3 \n data[3]=4 \n
+                        data[4]=5 \n data[5]=6 \n data[6]=7 \n data[7]=8 \n
+                        data[8]=9 \n data[9]=10\n data[10]=11 \n data[11]=12 \n 
+                        data[12]=13 \n data[13]=14 \n data[14]=15)
+ /*****************************************************************************************/
+uint zigbee_answer(int *data)
+{
+  //确定是否为21端口数据
+  for(int i=0;i<2;i++)*data++;
+  if(*data==33)
+    for(int i=0;i<4;i++)*data++;
+    switch(*data)
+      {
+        //读取地址ID，返回地址(收到的信息形如 FE0721900000210F00FF )
+        case 33:{
+                  *data++;uint ID_stored=*data;
+                  *data++;ID_stored=((*data*256)+ID_stored);
+                  for(int i=0;i<8;i++)*data--;
+                  //串口显示地址
+                  Serial.print("read ID=");Serial.println(ID_stored);
+                  //返回地址
+                  return ID_stored;
+                }
+        //读取网络地址(netID)，返回网络地址(收到的信息形如 FE0721900000228819F )
+        case 34:{
+                  *data++;uint netID_stored=*data;
+                  *data++;netID_stored=((*data*256)+netID_stored);
+                  for(int i=0;i<8;i++)*data--;
+                  //串口显示网络地址
+                  Serial.print("read netID=");Serial.println(netID_stored);
+                  //返回网络地址
+                  return netID_stored;
+                }
+        //读取信道，返回信道(收到的信息形如 FE0721900000228819F )
+        case 35:{
+                  *data++;int rout_stored=*data;
+                  for(int i=0;i<7;i++)*data--;
+                  //串口显示信道
+                  Serial.print("read rout=");Serial.println(rout_stored);
+                  //返回信道
+                  return rout_stored;
+                }
+        //读取波特率，返回波特率(收到的信息形如 FE0721900000228819F )
+        case 36:{
+                  *data++;int baudrate_stored=*data;
+                  for(int i=0;i<8;i++)*data--;
+                  //串口显示波特率
+                  zigbee_rebaudrate(baudrate_stored);
+                  //返回波特率对应代码
+                  return baudrate_stored;
+                }
+      }
+}
+
+
 
 
 
