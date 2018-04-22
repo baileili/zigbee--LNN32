@@ -1,0 +1,50 @@
+#######################################
+# Syntax Coloring Map For 你的类名
+#######################################
+ 
+#######################################
+# Datatypes (KEYWORD1) 数据类型关键字
+#######################################
+ 
+Zigbee	KEYWORD1
+Math	KEYWORD1
+ 
+#######################################
+# Methods and Functions (KEYWORD2) 方法类型关键字
+#######################################
+ 
+data	KEYWORD2
+send	KEYWORD2
+rev	KEYWORD2
+setADD	KEYWORD2
+setID	KEYWORD2
+setLED	KEYWORD2
+setTTL	KEYWORD2
+restart	KEYWORD2
+readADD	KEYWORD2
+readID	KEYWORD2
+reply	KEYWORD2
+setRESET	KEYWORD2
+setROUTE	KEYWORD2
+setBAUDRATE	KEYWORD2
+readROUT	KEYWORD2
+readBAUDRATE	KEYWORD2
+readRSSI	KEYWORD2
+translation	KEYWORD2
+datagroup	KEYWORD2
+READOUTtoBAUDRATE	KEYWORD2
+ 
+#######################################
+# Constants (LITERAL1)  常量类型关键字
+#######################################
+ 
+HIGHT	LITERAL1
+TTL_HIGHT	LITERAL1
+hight	LITERAL1
+ttl_hight	LITERAL1
+LOW	LITERAL1
+TTL_LOW	LITERAL1
+low	LITERAL1
+ttl_low	LITERAL1
+erro	LITERAL1
+end	LITERAL1
