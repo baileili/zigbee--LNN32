@@ -1,16 +1,16 @@
 #######################################
-# Syntax Coloring Map For ä½ çš„ç±»å
+# Syntax Coloring Map For ÄãµÄÀàÃû
 #######################################
  
 #######################################
-# Datatypes (KEYWORD1) æ•°æ®ç±»å‹å…³é”®å­—
+# Datatypes (KEYWORD1) Êı¾İÀàĞÍ¹Ø¼ü×Ö
 #######################################
  
 Zigbee	KEYWORD1
 Math	KEYWORD1
  
 #######################################
-# Methods and Functions (KEYWORD2) æ–¹æ³•ç±»å‹å…³é”®å­—
+# Methods and Functions (KEYWORD2) ·½·¨ÀàĞÍ¹Ø¼ü×Ö
 #######################################
  
 data	KEYWORD2
@@ -35,7 +35,7 @@ datagroup	KEYWORD2
 READOUTtoBAUDRATE	KEYWORD2
  
 #######################################
-# Constants (LITERAL1)  å¸¸é‡ç±»å‹å…³é”®å­—
+# Constants (LITERAL1)  ³£Á¿ÀàĞÍ¹Ø¼ü×Ö
 #######################################
  
 HIGHT	LITERAL1
